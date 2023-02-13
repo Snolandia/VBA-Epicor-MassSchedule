@@ -14,3 +14,4 @@ C is for the date you are wanting to schedule to. Format is MM-DD-YYYY
 Cell V9 needs to have the company name in it. Specifially how company name is referenced in epicor.
 
 Column E will have any errors and the results of the scheduling pasted into it.
+
