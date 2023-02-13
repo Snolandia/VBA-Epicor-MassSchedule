@@ -1,0 +1,142 @@
+Sub ApiMassSchedule()
+
+    'Need to have Microsoft XML referenced in tools section
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+    
+    Dim username, password As String
+    Dim ws As Worksheet
+    Dim begintime As String
+    begintime = Now
+    Dim cel As Range
+    
+    Dim json As String
+    Dim counter As Long
+    Dim ws As Worksheet
+    Dim objHTTP As Object
+    
+    Dim jobnum, startdate, scheduledata, company, assemblyseq, oprseq, opdtlseq, whatif, finite, schedtypecode, scheduledirection, _
+     setupcomplete, productioncomplete, overridemtlcon, overridehistdatesetting, recalcexpprodyld, useschedulingmultijob, _
+     schedulingmultijobignorelocks, SchedulingMultiJobMinimizeWIP, SchedulingMultiJobMoveJobsAcrossPlants, RowMod, q  As String
+     
+    Dim enddate, endtime As String
+    
+    '----------------------------------------------------------------------------------------
+    'UserData Here
+    '/////////////////////////////////////////////////////////////////////////////////////////////////////////
+    Set ws = ThisWorkbook.Sheets("Control Panel") 'Pick name of sheet you want to use
+    username = "snolandia" 'Set username
+    pasword = "*****"   'Set password
+    Url = "https://epicor.YourCompany.com/epicorerp/api/v1/Erp.BO.ScheduleEngineSvc/MoveJobItem()" 'Put in you api address here.
+    
+    '/////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    Set cel = ws.Range("A1")
+    
+    Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
+    objHTTP.Open "POST", Url, False
+    objHTTP.SetRequestHeader "Authorization", "Basic " & Base64(username & password)
+    objHTTP.SetRequestHeader "Content-Type", "application/json"
+    
+    q = Chr(34)
+    a = Chr(39)
+    counter = 1
+    
+    Do While cel.Offset(counter, 0) <> "" 'Loops through the jobs
+        
+        'A lot of this is redundant and could be pulled out of the loop
+        company = q & "Company" & q & ":" & q & ws.Range("V9") & q
+        jobnum = q & "JobNum" & q & ":" & q & cel.Offset(counter, 0) & q
+        assemblyseq = q & "AssemblySeq" & q & ":" & "0"
+        oprseq = q & "OprSeq" & q & ":" & cel.Offset(counter, 1)
+        opdtlseq = q & "OprDtlSeq" & q & ":" & "0"
+        startdate = q & "StartDate" & q & ":" & q & cel.Offset(counter, 2) & q
+        starttime = q & "StartTime" & q & ":" & "25200"
+        whatif = q & "WhatIf" & q & ":" & q & "false" & q
+        finite = q & "Finite" & q & ":" & q & "true" & q
+        schedtypecode = q & "SchedTypeCode" & q & ":" & q & "bp" & q 'There are a couple schedtypecodes but they have poor documenation. Unsure of what does what but this is backwards all ops.
+        scheduledirection = q & "ScheduleDirection" & q & ":" & q & "end" & q
+        setupcomplete = q & "SetupComplete" & q & ":" & q & "false" & q
+        productioncomplete = q & "ProductionComplete" & q & ":" & q & "false" & q
+        overridemtlcon = q & "OverrideMtlCon" & q & ":" & q & "true" & q
+        overridehistdatesetting = q & "OverRideHistDateSetting" & q & ":" & "2"
+        recalcexpprodyld = q & "RecalcExpProdYld" & q & ":" & q & "false" & q
+        useschedulingmultijob = q & "UseSchedulingMultiJob" & q & ":" & q & "false" & q
+        schedulingmultijobignorelocks = q & "SchedulingMultiJobIgnoreLocks" & q & ":" & q & "false" & q
+        SchedulingMultiJobMinimizeWIP = q & "SchedulingMultiJobMinimizeWIP" & q & ":" & q & "false" & q
+        SchedulingMultiJobMoveJobsAcrossPlants = q & "SchedulingMultiJobMoveJobsAcrossPlants" & q & ":" & q & "false" & q
+        RowMod = q & "RowMod" & q & ":" & q & "A" & q
+        enddate = q & "EndDate" & q & ":" & q & cel.Offset(counter, 2) & q
+        endtime = q & "EndTime" & q & ":" & "0"
+        
+        'Sets up the data as a JSON string
+        scheduledata = "{" & q & "ds" & q & ":{" & q & "ScheduleEngine" & q & ":[{" & _
+            company & "," & _
+            jobnum & "," & _
+            assemblyseq & "," & _
+            oprseq & "," & _
+            whatif & "," & _
+            finite & "," & _
+            schedtypecode & "," & _
+            scheduledirection & "," & _
+            setupcomplete & "," & _
+            productioncomplete & "," & _
+            overridemtlcon & "," & _
+            overridehistdatesetting & "," & _
+            recalcexpprodyld & "," & _
+            useschedulingmultijob & "," & _
+            schedulingmultijobignorelocks & "," & _
+            SchedulingMultiJobMinimizeWIP & "," & _
+            SchedulingMultiJobMoveJobsAcrossPlants & "," & _
+            RowMod & "," & _
+            enddate & "," & _
+            endtime & _
+            "}]}}"
+    
+    DoEvents
+    Application.StatusBar = counter
+
+    json = objHTTP.responseText
+    
+    cel.Offset(counter, 4) = strresult
+    counter = counter + 1
+    Loop
+    
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.StatusBar = False
+    
+    Debug.Print "------------------------------------------------------------"
+    Debug.Print "Finished at : " & Now
+    Debug.Print "Took this long to run : " & Format((DateDiff("s", begintime, Now)) / 86400, "hh:mm:ss")
+    Debug.Print "////////////////////////////////////////////////////////////"
+    
+    MsgBox " FIN this many jobs :  " & counter & "   Took this long to run : " & Format((DateDiff("s", begintime, Now)) / 86400, "hh:mm:ss")
+
+End Sub
+
+
+Function Base64(text As String) As String
+  Dim unitext() As Byte
+  unitext = StrConv(text, vbFromUnicode)
+
+  Dim ObjDom As MSXML2.DOMDocument
+  Dim ObjElement As MSXML2.IXMLDOMElement
+
+  Set ObjDom = New MSXML2.DOMDocument
+  Set ObjElement = ObjDom.createElement("b64")
+
+  ObjElement.DataType = "bin.base64"
+  ObjElement.nodeTypedValue = unitext
+  
+  Base64 = Replace(ObjElement.text, vbLf, "")
+
+  Set ObjDom = Nothing
+  Set ObjElement = Nothing
+  
+End Function
+
+
